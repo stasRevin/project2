@@ -1,0 +1,162 @@
+<!--
+    build.xml for calorieCounterApplication
+-->
+
+<project default="deploy">
+    <property name="user_home" value="${user.home}"/>
+    <property name="project_home" value="${user.dir}"/>
+    <property name="tomcat" value="${user_home}/tomcat"/>
+    <property name="src" value="src"/>
+    <property name="config" value="config"/>
+    <property name="build" value="build"/>
+    <property name="project" value="${src}/java114/project"/>
+    <property name="dist" value="dist"/>
+    <property name="lib" value="lib"/>
+    <property name="WEB-INF" value="${build}/WEB-INF"/>
+    <property name="META-INF" value="${build}/META-INF"/>
+    <property name="web_classes" value="${WEB-INF}/classes"/>
+    <property name="web_lib" value="${WEB-INF}/lib"/>
+    <property name="static" value="public_html"/>
+    <property name="calorie_counter_lib" value="${project_home}/lib/calorieCounter.jar"/>
+
+    <target name="init1">
+        <tstamp/>
+        <mkdir dir="${build}"/>
+        <mkdir dir="${build}/classes"/>
+        <mkdir dir="${META-INF}"/>
+        <echo message="Initialization part 1 for calorie_counter completed"/>
+    </target>
+
+    <target name="init2" depends="init1">
+        <tstamp/>
+        <mkdir dir="${dist}"/>
+        <mkdir dir="${WEB-INF}"/>
+        <mkdir dir="${web_classes}"/>
+        <mkdir dir="${WEB-INF}/lib"/>
+        <mkdir dir="${config}"/>
+        <mkdir dir="${static}"/>
+        <mkdir dir="${static}/images"/>
+        <mkdir dir="${project}"/>
+        <echo message="Initialization part 2 for calorie_counter completed"/>
+    </target>
+
+    <target name="clean" description="Delete build and dist">
+        <delete dir="${build}"/>
+        <delete dir="${dist}"/>
+    </target>
+
+    <target name="compile_calorie_counter" depends="init2">
+        <javac srcdir="${src}"
+               destdir="${build}/classes"
+               extdirs="${lib}"
+               verbose="false"
+               excludes="*.jsp,
+                         *.html,
+                         *.xml,
+                         *.js,
+                         java114/project"
+               deprecation="on"
+               debug="on"
+               includeAntRuntime="false">
+            <compilerarg value="-Xlint:unchecked"/>
+        </javac>
+    </target>
+
+    <target name="build_calorie_counter" depends="backup, clean, compile_calorie_counter">
+        <jar destfile="${calorie_counter_lib}">
+            <fileset dir="${build}/classes"/>
+        </jar>
+    </target>
+
+    <target name="compile_web" depends="init2, build_calorie_counter">
+        <javac srcdir="${src}"
+            destdir="${web_classes}"
+            extdirs="${lib}"
+            verbose="false"
+            includes="java114/project/**"
+            excludes="*.jsp,
+                      *.html,
+                      *.xml,
+                      *.js,
+                      java114/calorieCounter/**"
+            deprecation="on"
+            debug="on"
+            includeAntRuntime="false"
+        />
+    </target>
+
+    <target name="build_web" depends="backup, clean, compile_web">
+
+        <copy todir="${web_classes}">
+            <fileset dir="${config}"/>
+        </copy>
+
+        <copy todir="${build}/images">
+            <fileset dir="${static}/images"/>
+        </copy>
+
+        <copy todir="${build}">
+            <fileset dir="${static}">
+                <include name="**/*.jsp"/>
+            </fileset>
+        </copy>
+
+        <copy todir="${build}">
+            <fileset dir="${static}">
+                <include name="**/*.html"/>
+            </fileset>
+        </copy>
+
+        <copy todir="${build}">
+            <fileset dir="${static}">
+                <include name="**/*.js"/>
+            </fileset>
+        </copy>
+
+        <copy file="${calorie_counter_lib}" todir="${web_lib}"/>
+    </target>
+
+    <target name="dist" depends="build_web">
+        <war warfile="${dist}/java114.war"
+             webxml="${config}/web.xml"
+             basedir="${build}">
+        </war>
+    </target>
+
+    <target name="deploy" depends="dist">
+        <copy file="${dist}/java114.war" todir="${tomcat}/webapps"/>
+    </target>
+
+    <target name="backup">
+        <delete file="${user_home}/backups/calorie_counter_backup.tar.gz"/>
+
+        <tar destfile="${user_home}/backups/calorie_couter_backup.tar.gz"
+             compression="gzip"
+             basedir="${project_home}"/>
+
+        <echo message="Backup Files Created"/>
+
+    </target>
+
+    <target name="tcdown">
+        <exec dir="." executable="${tomcat}/bin/shutdown.sh">
+        </exec>
+    </target>
+
+    <target name="tempdir">
+        <mkdir dir="${user_home}/calorieCounterData"/>
+    </target>
+
+    <target name="tcup" depends="tempdir">
+        <exec dir="." executable="${tomcat}/bin/startup.sh">
+            <env key="CATALINA_TMPDIR" value="${user_home}/calorieCounterData/"/>
+        </exec>
+    </target>
+
+    <target name="tcbounce">
+        <antcall target="tcdown"/>
+        <sleep seconds="4"/>
+        <antcall target="tcup"/>
+    </target>
+
+</project>
