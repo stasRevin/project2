@@ -8,7 +8,9 @@
     <property name="tomcat" value="${user_home}/tomcat"/>
     <property name="src" value="src"/>
     <property name="config" value="config"/>
+    <property name="utilities" value="${src}/java114/utilities"/>
     <property name="build" value="build"/>
+    <property name="userData" value="${src}/java114/userData"/>
     <property name="project" value="${src}/java114/project"/>
     <property name="dist" value="dist"/>
     <property name="lib" value="lib"/>
@@ -37,6 +39,8 @@
         <mkdir dir="${static}"/>
         <mkdir dir="${static}/images"/>
         <mkdir dir="${project}"/>
+        <mkdir dir="${utilities}"/>
+        <mkdir dir="${userData}"/>
         <echo message="Initialization part 2 for calorie_counter completed"/>
     </target>
 
@@ -73,7 +77,9 @@
             destdir="${web_classes}"
             extdirs="${lib}"
             verbose="false"
-            includes="java114/project/**"
+            includes="java114/project/**,
+                      java114/userData/**,
+                      java114/utilities/**"
             excludes="*.jsp,
                       *.html,
                       *.xml,
