@@ -119,6 +119,12 @@
             </fileset>
         </copy>
 
+        <copy todir="${build}">
+            <fileset dir="${static}">
+                <include name="**/*.css"/>
+            </fileset>
+        </copy>
+
         <copy file="${calorie_counter_lib}" todir="${web_lib}"/>
     </target>
 
