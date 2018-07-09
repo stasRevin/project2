@@ -3,6 +3,8 @@ package java114.project;
 import java.io.*;
 import java.util.*;
 import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.*;
 
 import javax.servlet.*;
 import javax.servlet.http.*;
@@ -40,30 +42,31 @@ public class LoginUser extends HttpServlet implements PropertiesLoader {
 
         HttpSession session = request.getSession();
 
+
+        System.out.println("This session ID: " + session.getId());
+        System.out.println("Authentication scheme: " + request.getAuthType());
+
         String username = request.getParameter("username");
         String password = request.getParameter("password");
 
         Properties properties = loadProperties("/project.properties");
+        session.setAttribute("properties", properties);
         UserDirectory userDirectory = new UserDirectory(properties);
 
         User user = userDirectory.login(username, password);
-        String photoFileLoaction = user.getPhotoLocation();
 
+        String photoFileLocation = user.getPhotoLocation();
 
         String url = null;
+        String userId = "";
 
         if (Objects.nonNull(user)) {
 
-            System.out.println("username: " + user.getUsername());
-            System.out.println("firstName: " + user.getFirstName());
-            System.out.println("lastName: " + user.getLastName());
-            System.out.println("gender: " + user.getGender());
-            System.out.println("birthdate: " + user.getBirthdate());
-            System.out.println("weight: " + user.getWeight());
-
+            userId = user.getUserId();
             session.setAttribute("user", user);
+            session.setAttribute("userId", userId);
 
-            url = "/userProfile.jsp";
+            url = "/java114/userProfile";
 
         } else {
 
@@ -72,10 +75,73 @@ public class LoginUser extends HttpServlet implements PropertiesLoader {
         }
 
 
-        RequestDispatcher dispatcher = getServletContext().getRequestDispatcher(url);
-        dispatcher.forward(request, response);
+        LoginUser.setUserWorkoutActivity(userId, session);
+        String photoPath = prepareUsersPhoto(photoFileLocation, userId);
+        session.setAttribute("photoPath", photoPath);
+
+        response.sendRedirect(url);
 
 
+    }
+
+    public void doGet(HttpServletRequest request, HttpServletResponse response)
+    throws ServletException, IOException {
+
+        doPost(request, response);
+
+    }
+
+
+    private String prepareUsersPhoto(String photoFileLocation, String userId) {
+
+        String staticImage = "/Users/stanislavrevin/tomcat/webapps/java114/images/"
+                + userId + "/";
+        File imageDirectory = new File(staticImage);
+        System.out.println("PHOTO Location: " + photoFileLocation);
+        String imageFile = ""
+                + photoFileLocation.substring(photoFileLocation.lastIndexOf("/"));
+        String temporaryDirectory = System.getProperty("java.io.tmpdir");
+
+        Path source = Paths.get(temporaryDirectory + userId + "/" + imageFile);
+        Path target = Paths.get(staticImage + imageFile);
+
+        SimpleVisitor simpleVisitor = new SimpleVisitor(target, source);
+
+        if (!imageDirectory.exists()) {
+
+            System.out.println("creating directory for images...");
+            System.out.println(imageDirectory.mkdir());
+        }
+
+        try {
+
+             Files.walkFileTree(source, simpleVisitor);
+
+        } catch (IOException inputOutputException) {
+
+            inputOutputException.printStackTrace();
+        }
+
+        System.out.println("IMAGES: " + imageFile);
+        System.out.println("IMAGE DIRECTORY: " + imageDirectory);
+
+        return "images/" + userId + imageFile;
+    }
+
+
+    public static void setUserWorkoutActivity(String userId, HttpSession session) {
+
+        LoginUser loginUser = new LoginUser();
+        Properties properties = loginUser.loadProperties("/project.properties");
+        UserDirectory userDirectory = new UserDirectory(properties);
+
+        List userWorkoutList
+                = userDirectory.getWorkout(Integer.parseInt(userId));
+
+        WorkoutList workoutList = new WorkoutList();
+
+        workoutList.setWorkoutList(userWorkoutList);
+        session.setAttribute("workoutList", workoutList);
     }
 
 }

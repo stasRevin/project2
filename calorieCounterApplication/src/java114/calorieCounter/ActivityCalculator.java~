@@ -1,4 +1,4 @@
-
+package java114.calorieCounter;
 
 public class ActivityCalculator {
 

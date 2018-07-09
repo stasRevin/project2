@@ -27,6 +27,7 @@ public class UserDirectory {
 
         try {
 
+            System.out.println("PROPERTY DRIVER: " + properties.getProperty("driver"));
             Class.forName(properties.getProperty("driver"));
 
             connection = DriverManager.getConnection( properties.getProperty("url"),
@@ -111,6 +112,7 @@ public class UserDirectory {
 
                 if (connection != null) {
 
+                    System.out.println("Closing db conn in addUser");
                     connection.close();
                 }
             } catch (SQLException sqlException) {
@@ -190,7 +192,7 @@ public class UserDirectory {
                 }
 
                 if (connection != null) {
-
+                    System.out.println("Closing db conn in login");
                     connection.close();
 
                 }
@@ -255,6 +257,7 @@ public class UserDirectory {
 
                 if (connection != null) {
 
+                    System.out.println("Closing db conn in getUserId");
                     connection.close();
 
                 }
@@ -321,7 +324,7 @@ public class UserDirectory {
                 }
 
                 if (connection != null) {
-
+                    System.out.println("Closing db conn in addUserPhoto");
                     connection.close();
                 }
 
@@ -340,6 +343,280 @@ public class UserDirectory {
         return message;
     }
 
+    public String logWorkout(String idInput, String dateInput, String typeInput,
+                             String timeInput, String heartrateInput, int calories) {
+
+        Connection connection = null;
+        PreparedStatement insertWorkout = null;
+        String message = "An error occurred. The workout was not logged.";
+        int executionResult = 0;
+
+        DataConverter dataConverter = new DataConverter();
+        System.out.println("ID INPUT: " + idInput);
+        int id = dataConverter.convertToInt(idInput);
+        java.sql.Date date = dataConverter.convertToDate(dateInput);
+        int type = dataConverter.convertToInt(typeInput);
+        int time = dataConverter.convertToInt(timeInput);
+        int heartrate = dataConverter.convertToInt(heartrateInput);
+
+
+        try {
+
+            String query = "INSERT INTO "
+                    + " exercise_log (user_id, date, type, time_in_minutes, "
+                    + "heartrate, calories) VALUES (?, ?, ?, ?, ?, ?)";
+
+            System.out.println("WORKOUT QUERY: " + query);
+            connection = establishDatabaseConnection();
+            System.out.println("ALIVE AFTER CONNECTION: " + connection.toString());
+            insertWorkout = connection.prepareStatement(query);
+
+
+
+            insertWorkout.setInt(1, id);
+            insertWorkout.setDate(2, date);
+            insertWorkout.setInt(3, type);
+            insertWorkout.setInt(4, time);
+            insertWorkout.setInt(5, heartrate);
+            insertWorkout.setInt(6, calories);
+
+            executionResult = insertWorkout.executeUpdate();
+
+            if (executionResult > 0) {
+
+                message = "The workout was added successfully.";
+
+            } else if (executionResult == 0) {
+
+                message = "The workout was not added. ";
+            }
+
+
+        } catch (SQLException sqlException) {
+
+            sqlException.printStackTrace();
+
+        } catch (Exception exception) {
+
+            exception.printStackTrace();
+
+        } finally {
+
+            try {
+
+                if (insertWorkout != null) {
+
+                    insertWorkout.close();
+                }
+
+                if (connection != null) {
+
+                    System.out.println("Closing db conn in logWorkout");
+                    connection.close();
+
+                }
+
+            } catch (SQLException sqlException) {
+
+                sqlException.printStackTrace();
+
+            } catch (Exception exception) {
+
+                exception.printStackTrace();
+            }
+
+        }
+        return message;
+    }
+
+    public List<Workout> getWorkout(int userId) {
+
+        Connection connection = null;
+        PreparedStatement query = null;
+        ResultSet resultSet = null;
+        List<Workout> workoutList = new ArrayList<>();
+
+        try {
+
+            connection = establishDatabaseConnection();
+            String queryText = "SELECT date, name, time_in_minutes, heartrate, "
+                    + "calories "
+                    + "FROM exercise_view WHERE user_id = ?";
+
+            System.out.println("getWorkout query text: " + queryText);
+            query = connection.prepareStatement(queryText);
+
+            query.setInt(1, userId);
+            resultSet = query.executeQuery();
+
+            while (resultSet.next()) {
+
+                Workout workout = new Workout();
+                workout.setDate(resultSet.getString("date"));
+                workout.setType(resultSet.getString("name"));
+                workout.setTime(resultSet.getString("time_in_minutes"));
+                workout.setHeartRate(resultSet.getString("heartrate"));
+                workout.setCaloriesBurned(resultSet.getString("calories"));
+
+                workoutList.add(workout);
+
+            }
+
+        } catch (SQLException sqlException) {
+
+            sqlException.printStackTrace();
+
+        } catch (Exception exception) {
+
+            exception.printStackTrace();
+
+        } finally {
+
+
+            try {
+
+                if (resultSet != null) {
+
+                    resultSet.close();
+
+                }
+
+                if (query != null) {
+
+                    query.close();
+
+                }
+
+                if (connection != null) {
+
+                    connection.close();
+
+                }
+
+            } catch (SQLException sqlException) {
+
+                sqlException.printStackTrace();
+
+            } catch (Exception exception) {
+
+                exception.printStackTrace();
+
+            }
+
+        }
+
+
+       return workoutList;
+    }
+
+    public User updateProfile(String idInput, String firstName, String lastName,
+                              String gender, String birthdateInput,
+                              String weightInput, String photoLocation) {
+
+        User user = null;
+        Connection connection = null;
+        PreparedStatement update = null;
+        PreparedStatement query = null;
+        ResultSet resultSet = null;
+        int executionResult = 0;
+        DataConverter dataConverter = new DataConverter();
+        java.sql.Date birthdate = dataConverter.convertToDate(birthdateInput);
+        int weight = dataConverter.convertToInt(weightInput);
+        int id = dataConverter.convertToInt(idInput);
+
+        try {
+
+            connection = establishDatabaseConnection();
+
+            String sqlText = "UPDATE exercise_user "
+                    + "SET first_name = ?, last_name = ?, gender = ?, "
+                    + "birthdate = ?, weight = ?, photo_location "
+                    + "WHERE id = ?";
+
+            System.out.println("UPDATE PROFILE QUERY: " + sqlText);
+            update = connection.prepareStatement(sqlText);
+
+            update.setString(1, firstName);
+            update.setString(2, lastName);
+            update.setString(3, gender);
+            update.setDate(4, birthdate);
+            update.setInt(5, weight);
+            update.setString(6, photoLocation);
+            update.setInt(7, id);
+
+            executionResult = update.executeUpdate();
+
+            System.out.println((executionResult > 0) ? "UPDATE success" : "UPDATE fail");
+
+            sqlText = "SELECT id, username, first_name, last_name, gender, birthdate,"
+                    + " weight, photo_location FROM exercise_user WHERE id = ?";
+
+
+            query.setInt(1, id);
+            query = connection.prepareStatement(sqlText);
+            resultSet = query.executeQuery();
+
+            while (resultSet.next()) {
+
+                user = new User();
+
+                user.setUserId(resultSet.getString("id"));
+                user.setFirstName(resultSet.getString("first_name"));
+                user.setLastName(resultSet.getString("last_name"));
+                user.setGender(resultSet.getString("gender"));
+                user.setBirthdate(resultSet.getString("birthdate"));
+                user.setWeight(resultSet.getString("weight"));
+                user.setUsername(resultSet.getString("username"));
+                user.setPhotoLocation(resultSet.getString("photo_location"));
+
+            }
+
+        } catch (SQLException sqlException) {
+
+            sqlException.printStackTrace();
+
+        } catch (Exception exception) {
+
+            exception.printStackTrace();
+
+        } finally {
+
+            try {
+
+                if (update != null) {
+
+                    update.close();
+                }
+
+                if (query != null) {
+
+                    query.close();
+
+                }
+
+                if (resultSet != null) {
+
+                    resultSet.close();
+                }
+
+                if (connection != null) {
+
+                    connection.close();
+                }
+
+            } catch (SQLException sqlException) {
+
+                sqlException.printStackTrace();
+
+            } catch (Exception exception) {
+
+                exception.printStackTrace();
+            }
+
+        }
+
+        return user;
+    }
 
 }
 

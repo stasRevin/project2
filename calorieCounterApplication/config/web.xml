@@ -48,6 +48,28 @@
     <welcome-file>/index.jsp</welcome-file>
   </welcome-file-list>
 
+  <filter>
+    <filter-name>cacheFilter</filter-name>
+    <filter-class>java114.project.CacheFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>cacheFilter</filter-name>
+    <url-pattern>/index.jsp</url-pattern>
+  </filter-mapping>
+  <filter-mapping>
+    <filter-name>cacheFilter</filter-name>
+    <url-pattern>/userProfile.jsp</url-pattern>
+  </filter-mapping>
+    <filter-mapping>
+    <filter-name>cacheFilter</filter-name>
+    <url-pattern>/userProfile</url-pattern>
+  </filter-mapping>
+    <filter-mapping>
+    <filter-name>cacheFilter</filter-name>
+    <url-pattern>/loginUser</url-pattern>
+  </filter-mapping>
+
+
 </web-app>
 
 
